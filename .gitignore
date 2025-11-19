@@ -1,0 +1,11 @@
+node_modules
+dist
+pnpm-lock.yaml
+temp
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
+.aider*
