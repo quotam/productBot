@@ -16,13 +16,12 @@ const publicConfig = {
 
   BATCH_TIMEOUT: 3000,
 
-  SUPPORTED_FORMATS: [".xlsx", ".xls"],
-
   COLUMNS: {
     SOURCE_CODE: "B",
     CATALOG_ARTICLE: "A",
     CATALOG_BARCODE: "F",
   },
+  TEMPDIR: "../temp",
   ...privateConfig,
 };
 

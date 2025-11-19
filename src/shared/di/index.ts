@@ -11,7 +11,7 @@ export abstract class BaseService {
   }
 
   protected async cached<T>(params: {
-    key: unknown[];
+    key: string;
     getData: () => Promise<T>;
     revalidate?: number;
   }): Promise<T> {

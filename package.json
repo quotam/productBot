@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "dotenv": "^17.2.3",
+    "exceljs": "^4.4.0",
     "grammy": "^1.38.3",
     "zod": "^4.1.12"
   }
