@@ -29,6 +29,9 @@ export class FileProcessor {
 
     // Get barcode from catalog
     const barcode = this.catalogService.getBarcode(article);
+    if (!barcode) {
+      throw new Error(`Артикул "${article}" не найден в справочнике`);
+    }
 
     // Чтение Excel файла
     const workbook = new ExcelJS.Workbook();
@@ -45,18 +48,22 @@ export class FileProcessor {
 
       if (cellValue) {
         codes.push(cellValue);
-      } else if (cellValue === undefined) {
-        break; // пустая ячейка, первая пустая
+      } else {
+        // Первая пустая B
+        break;
       }
-
       rowIndex++;
+    }
+
+    if (codes.length === 0) {
+      throw new Error("В файле не найдено кодов в столбце B");
     }
 
     return {
       article,
       codes,
       fileName,
-      barcode: barcode || "не найден в справочнике",
+      barcode,
     };
   }
 
