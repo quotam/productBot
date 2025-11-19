@@ -1,13 +1,23 @@
 import * as path from "path";
 import * as fs from "fs";
 import ExcelJS from "exceljs";
-import { ProcessedFile } from "../shared/types/file";
+import { CatalogService } from "./catalogService";
+import { ProcessedFile } from "../shared/types";
 
 const allowedExtensions = [".xlsx", ".xls"];
 const targetCell = 2; // Столбец B
 
 export class FileProcessor {
+  private static catalogService: CatalogService = new CatalogService();
+
   static async processExcelFile(filePath: string): Promise<ProcessedFile> {
+    // Load catalog first
+    try {
+      await this.catalogService.loadCatalog();
+    } catch (error) {
+      throw new Error(`Catalog loading failed: ${error}`);
+    }
+
     // Проверка существования файла
     if (!fs.existsSync(filePath)) {
       throw new Error(`File not found: ${filePath}`);
@@ -16,6 +26,9 @@ export class FileProcessor {
     // Извлечение артикула из имени файла
     const fileName = path.basename(filePath);
     const article = this.extractArticle(fileName);
+
+    // Get barcode from catalog
+    const barcode = this.catalogService.getBarcode(article);
 
     // Чтение Excel файла
     const workbook = new ExcelJS.Workbook();
@@ -43,6 +56,7 @@ export class FileProcessor {
       article,
       codes,
       fileName,
+      barcode: barcode || "не найден в справочнике",
     };
   }
 

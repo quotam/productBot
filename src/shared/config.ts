@@ -22,6 +22,7 @@ const publicConfig = {
     CATALOG_BARCODE: "F",
   },
   TEMPDIR: "../temp",
+  CATALOG_FILE_PATH: process.env.CATALOG_FILE_PATH || "./catalog.xlsx",
   ...privateConfig,
 };
 

@@ -3,14 +3,15 @@ import { Bot, Context } from "grammy";
 import fs from "fs";
 import { FileProcessor } from "../services/fileProcessor";
 import path from "path";
-import { ProcessedFile } from "../shared/types/file";
 import { Config } from "../shared/config";
+import { ProcessedFile } from "../shared/types";
 
 function formatResponse(data: ProcessedFile): string {
   return `
 📊 Результаты обработки:
 📁 Файл: ${data.fileName}
 📦 Артикул: ${data.article}
+🏷️ Штрихкод: ${data.barcode}
 🔢 Найдено кодов: ${data.codes.length}
 📋 Коды: ${data.codes.join(", ")}
     `.trim();
