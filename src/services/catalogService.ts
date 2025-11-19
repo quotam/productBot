@@ -1,19 +1,12 @@
 import ExcelJS from "exceljs";
-import { BaseService } from "../shared/di";
 import { Config } from "../shared/config";
+import { BaseService } from "../shared/di";
 import { CatalogEntry } from "../shared/types";
-import { cacheRegistry } from "../shared/di/registry";
-import { MemoryCacheStrategy } from "../shared/di/cacheStrategy";
 
 const CATALOG_CACHE_KEY = "catalog";
 const TARGET_START_ROW = 2;
 const BARCODE_CELL = 6;
 const ARTILE_CELL = 1;
-
-cacheRegistry.setStrategyForService(
-  "CatalogService",
-  new MemoryCacheStrategy(),
-);
 
 export class CatalogService extends BaseService {
   private catalog: Map<string, string> = new Map(); // article -> barcode
@@ -54,7 +47,9 @@ export class CatalogService extends BaseService {
           return entries;
         } catch (error) {
           if (error instanceof Error) {
-            throw new Error(`Не удалось загрузить справочник: ${error.message}`);
+            throw new Error(
+              `Не удалось загрузить справочник: ${error.message}`,
+            );
           }
           throw error;
         }

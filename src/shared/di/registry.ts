@@ -23,8 +23,6 @@ class CacheStrategyRegistry {
 
 const cacheRegistry = new CacheStrategyRegistry();
 
-if (process.env.NODE_ENV === "production") {
-  cacheRegistry.setDefaultStrategy(new MemoryCacheStrategy());
-}
+cacheRegistry.setDefaultStrategy(new MemoryCacheStrategy());
 
 export { cacheRegistry };
