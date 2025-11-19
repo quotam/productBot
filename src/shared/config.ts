@@ -22,7 +22,7 @@ const publicConfig = {
     CATALOG_ARTICLE: "A",
     CATALOG_BARCODE: "F",
   },
-  TEMPDIR: "../temp",
+  TEMPDIR: "./temp",
   ...privateConfig,
 };
 

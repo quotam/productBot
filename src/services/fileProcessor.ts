@@ -69,11 +69,18 @@ export class FileProcessor {
   }
 
   private static extractArticle(fileName: string): string {
-    const baseName = path.parse(fileName).name; // -ext
+    const baseName = path.parse(fileName).name;
     const firstSpaceIndex = baseName.indexOf(" ");
-    return firstSpaceIndex === -1
-      ? baseName
-      : baseName.substring(0, firstSpaceIndex);
+    const article =
+      firstSpaceIndex === -1
+        ? baseName
+        : baseName.substring(0, firstSpaceIndex);
+
+    if (!article || article.trim().length === 0) {
+      throw new Error("Не удалось извлечь артикул из названия файла");
+    }
+
+    return article;
   }
 
   static validateExtension(fileName: string): boolean {

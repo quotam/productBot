@@ -54,7 +54,7 @@ export const handleDocument = async (ctx: Context, bot: Bot) => {
     const response = await fetch(downloadUrl);
     const buffer = await response.arrayBuffer();
 
-    const tempDir = path.join(__dirname, Config.TEMPDIR);
+    const tempDir = Config.TEMPDIR;
     if (!fs.existsSync(tempDir)) {
       fs.mkdirSync(tempDir, { recursive: true });
     }
@@ -87,9 +87,15 @@ export const handleDocument = async (ctx: Context, bot: Bot) => {
       }
       userProcessingState.delete(userId);
     }, GROUP_TIMEOUT);
-
   } catch (error) {
     console.error("Processing error:", error);
+
+    const userState = userProcessingState.get(userId);
+
+    if (userState && userState.timer) {
+      clearTimeout(userState.timer);
+      userProcessingState.delete(userId);
+    }
 
     if (error instanceof UserError) {
       await ctx.reply(error.message);
@@ -97,7 +103,6 @@ export const handleDocument = async (ctx: Context, bot: Bot) => {
       await ctx.reply(
         "Произошла ошибка при обработке файла. Пожалуйста, проверьте формат файла.",
       );
-      throw error;
     }
   } finally {
     if (filePath && fs.existsSync(filePath)) {

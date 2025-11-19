@@ -22,26 +22,42 @@ export class CatalogService extends BaseService {
     const catalogData = await this.cached({
       key: CATALOG_CACHE_KEY,
       getData: async () => {
-        const workbook = new ExcelJS.Workbook();
-        await workbook.xlsx.readFile(Config.CATALOG_FILE_PATH);
+        try {
+          const workbook = new ExcelJS.Workbook();
+          await workbook.xlsx.readFile(Config.CATALOG_FILE_PATH);
 
-        const worksheet = workbook.worksheets[0];
-        const entries: CatalogEntry[] = [];
-
-        for (
-          let rowIndex = TARGET_START_ROW;
-          rowIndex <= worksheet.rowCount;
-          rowIndex++
-        ) {
-          const row = worksheet.getRow(rowIndex);
-          const article = row.getCell(ARTILE_CELL).value?.toString().trim(); // A
-          const barcode = row.getCell(BARCODE_CELL).value?.toString().trim(); // F
-
-          if (article && barcode) {
-            entries.push({ article, barcode });
+          if (workbook.worksheets.length === 0) {
+            throw new Error("Справочник пуст");
           }
+
+          const worksheet = workbook.worksheets[0];
+          const entries: CatalogEntry[] = [];
+
+          for (
+            let rowIndex = TARGET_START_ROW;
+            rowIndex <= worksheet.rowCount;
+            rowIndex++
+          ) {
+            const row = worksheet.getRow(rowIndex);
+            const article = row.getCell(ARTILE_CELL).value?.toString().trim();
+            const barcode = row.getCell(BARCODE_CELL).value?.toString().trim();
+
+            if (article && barcode) {
+              entries.push({ article, barcode });
+            }
+          }
+
+          if (entries.length === 0) {
+            throw new Error("В справочнике не найдено данных");
+          }
+
+          return entries;
+        } catch (error) {
+          if (error instanceof Error) {
+            throw new Error(`Не удалось загрузить справочник: ${error.message}`);
+          }
+          throw error;
         }
-        return entries;
       },
       revalidate: Config.CATALOG_CACHE_TTL,
     });
