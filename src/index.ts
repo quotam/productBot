@@ -1,6 +1,6 @@
+import { Bot, GrammyError, HttpError } from "grammy";
 import { setupRoutes } from "./routes";
 import { Config } from "./shared/config";
-import { Bot, GrammyError, HttpError } from "grammy";
 
 const bot = new Bot(Config.BOT_TOKEN);
 

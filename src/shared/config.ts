@@ -5,6 +5,7 @@ dotenv.config({});
 
 const privateConfigSchema = z.object({
   BOT_TOKEN: z.string(),
+  CATALOG_FILE_PATH: z.string().default("./catalog.xlsx"),
 });
 
 const privateConfig = privateConfigSchema.parse({
@@ -22,7 +23,6 @@ const publicConfig = {
     CATALOG_BARCODE: "F",
   },
   TEMPDIR: "../temp",
-  CATALOG_FILE_PATH: process.env.CATALOG_FILE_PATH || "./catalog.xlsx",
   ...privateConfig,
 };
 

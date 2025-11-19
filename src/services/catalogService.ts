@@ -2,18 +2,25 @@ import ExcelJS from "exceljs";
 import { BaseService } from "../shared/di";
 import { Config } from "../shared/config";
 import { CatalogEntry } from "../shared/types";
+import { cacheRegistry } from "../shared/di/registry";
+import { MemoryCacheStrategy } from "../shared/di/cacheStrategy";
+
+const CATALOG_CACHE_KEY = "catalog";
+const TARGET_START_ROW = 2;
+const BARCODE_CELL = 6;
+const ARTILE_CELL = 1;
+
+cacheRegistry.setStrategyForService(
+  "CatalogService",
+  new MemoryCacheStrategy(),
+);
 
 export class CatalogService extends BaseService {
   private catalog: Map<string, string> = new Map(); // article -> barcode
-  private isLoaded: boolean = false;
 
   async loadCatalog(): Promise<void> {
-    if (this.isLoaded) {
-      return;
-    }
-
     const catalogData = await this.cached({
-      key: "catalog",
+      key: CATALOG_CACHE_KEY,
       getData: async () => {
         const workbook = new ExcelJS.Workbook();
         await workbook.xlsx.readFile(Config.CATALOG_FILE_PATH);
@@ -21,18 +28,18 @@ export class CatalogService extends BaseService {
         const worksheet = workbook.worksheets[0];
         const entries: CatalogEntry[] = [];
 
-        let rowIndex = 2; // Start from second row (skip header)
-        while (rowIndex <= worksheet.rowCount) {
+        for (
+          let rowIndex = TARGET_START_ROW;
+          rowIndex <= worksheet.rowCount;
+          rowIndex++
+        ) {
           const row = worksheet.getRow(rowIndex);
-          const article = row.getCell(1).value?.toString().trim(); // Column A
-          const barcode = row.getCell(6).value?.toString().trim(); // Column F
+          const article = row.getCell(ARTILE_CELL).value?.toString().trim(); // A
+          const barcode = row.getCell(BARCODE_CELL).value?.toString().trim(); // F
 
           if (article && barcode) {
             entries.push({ article, barcode });
-          } else {
-            break; // Stop at first empty row
           }
-          rowIndex++;
         }
         return entries;
       },
@@ -43,7 +50,6 @@ export class CatalogService extends BaseService {
     catalogData.forEach((entry) => {
       this.catalog.set(entry.article, entry.barcode);
     });
-    this.isLoaded = true;
   }
 
   getBarcode(article: string): string | undefined {
@@ -66,9 +72,5 @@ export class CatalogService extends BaseService {
 
   hasArticle(article: string): boolean {
     return this.catalog.has(article);
-  }
-
-  get size(): number {
-    return this.catalog.size;
   }
 }

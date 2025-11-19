@@ -3,19 +3,24 @@ import * as fs from "fs";
 import ExcelJS from "exceljs";
 import { CatalogService } from "./catalogService";
 import { ProcessedFile } from "../shared/types";
+import {
+  NotFoundInCatalog,
+  NoCodesFoundError,
+  CatalogLoadingError,
+} from "../shared/error";
 
-const allowedExtensions = [".xlsx", ".xls"];
-const targetCell = 2; // Столбец B
+const ALLOWED_EXT = [".xlsx", ".xls"];
+const TARGET_CELL = 2;
+const TARGET_START_ROW = 2;
 
 export class FileProcessor {
   private static catalogService: CatalogService = new CatalogService();
 
   static async processExcelFile(filePath: string): Promise<ProcessedFile> {
-    // Load catalog first
     try {
       await this.catalogService.loadCatalog();
     } catch (error) {
-      throw new Error(`Catalog loading failed: ${error}`);
+      throw new CatalogLoadingError((error as Error).message);
     }
 
     // Проверка существования файла
@@ -27,10 +32,9 @@ export class FileProcessor {
     const fileName = path.basename(filePath);
     const article = this.extractArticle(fileName);
 
-    // Get barcode from catalog
     const barcode = this.catalogService.getBarcode(article);
     if (!barcode) {
-      throw new Error(`Артикул "${article}" не найден в справочнике`);
+      throw new NotFoundInCatalog(article);
     }
 
     // Чтение Excel файла
@@ -40,23 +44,20 @@ export class FileProcessor {
     const worksheet = workbook.worksheets[0];
     const codes: string[] = [];
 
-    // Обработка строк начиная со второй
-    let rowIndex = 2;
-    while (rowIndex <= worksheet.rowCount) {
+    for (
+      let rowIndex = TARGET_START_ROW;
+      rowIndex <= worksheet.rowCount;
+      rowIndex++
+    ) {
       const row = worksheet.getRow(rowIndex);
-      const cellValue = row.getCell(targetCell).value?.toString().trim();
-
+      const cellValue = row.getCell(TARGET_CELL).value?.toString().trim();
       if (cellValue) {
         codes.push(cellValue);
-      } else {
-        // Первая пустая B
-        break;
       }
-      rowIndex++;
     }
 
     if (codes.length === 0) {
-      throw new Error("В файле не найдено кодов в столбце B");
+      throw new NoCodesFoundError();
     }
 
     return {
@@ -68,7 +69,7 @@ export class FileProcessor {
   }
 
   private static extractArticle(fileName: string): string {
-    const baseName = path.parse(fileName).name; // Убираем расширение
+    const baseName = path.parse(fileName).name; // -ext
     const firstSpaceIndex = baseName.indexOf(" ");
     return firstSpaceIndex === -1
       ? baseName
@@ -77,6 +78,6 @@ export class FileProcessor {
 
   static validateExtension(fileName: string): boolean {
     const ext = path.extname(fileName).toLowerCase();
-    return allowedExtensions.includes(ext);
+    return ALLOWED_EXT.includes(ext);
   }
 }

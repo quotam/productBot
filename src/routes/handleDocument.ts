@@ -1,11 +1,13 @@
-import { Bot, Context, InputFile } from "grammy";
 import fs from "fs";
-import { FileProcessor } from "../services/fileProcessor";
+import { Bot, Context, InputFile } from "grammy";
 import path from "path";
+import { FileProcessor } from "../services/fileProcessor";
 import { Config } from "../shared/config";
+import { UserError } from "../shared/error";
 import { createResultFile } from "../shared/utils";
 
 const GROUP_TIMEOUT = 3000;
+const RESULT_FILE_NAME = (article: string) => `codes_${article}.xlsx`;
 
 const userProcessingState = new Map<
   number,
@@ -45,6 +47,7 @@ export const handleDocument = async (ctx: Context, bot: Bot) => {
     return;
   }
 
+  let filePath: string | undefined;
   try {
     const file = await ctx.getFile();
     const downloadUrl = `https://api.telegram.org/file/bot${Config.BOT_TOKEN}/${file.file_path}`;
@@ -55,14 +58,16 @@ export const handleDocument = async (ctx: Context, bot: Bot) => {
     if (!fs.existsSync(tempDir)) {
       fs.mkdirSync(tempDir, { recursive: true });
     }
-    const filePath = path.join(tempDir, fileName);
+    filePath = path.join(tempDir, fileName);
     fs.writeFileSync(filePath, Buffer.from(buffer));
     const processedData = await FileProcessor.processExcelFile(filePath);
 
     // Create result file and send it
-    const resultBuffer = createResultFile(processedData);
-    const resultFileName = `result_${processedData.fileName}.txt`;
-    await ctx.replyWithDocument(new InputFile(resultBuffer, resultFileName));
+    const resultBuffer = await createResultFile(processedData);
+
+    await ctx.replyWithDocument(
+      new InputFile(resultBuffer, RESULT_FILE_NAME(processedData.article)),
+    );
 
     // Update group processing state
     const userState = userProcessingState.get(userId);
@@ -83,23 +88,20 @@ export const handleDocument = async (ctx: Context, bot: Bot) => {
       userProcessingState.delete(userId);
     }, GROUP_TIMEOUT);
 
-    fs.unlinkSync(filePath);
   } catch (error) {
     console.error("Processing error:", error);
-    const errorMessage = (error as Error).message;
 
-    if (errorMessage.includes("не найден в справочнике")) {
-      await ctx.reply(errorMessage);
-    } else if (errorMessage.includes("не найдено кодов в столбце B")) {
-      await ctx.reply(errorMessage);
-    } else if (errorMessage.includes("Catalog loading failed")) {
-      await ctx.reply(
-        "Ошибка загрузки справочника. Пожалуйста, попробуйте позже.",
-      );
+    if (error instanceof UserError) {
+      await ctx.reply(error.message);
     } else {
       await ctx.reply(
         "Произошла ошибка при обработке файла. Пожалуйста, проверьте формат файла.",
       );
+      throw error;
+    }
+  } finally {
+    if (filePath && fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
     }
   }
 };
