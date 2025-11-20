@@ -3,7 +3,6 @@ import { Bot, Context, InputFile } from "grammy";
 import path from "path";
 import { FileProcessor } from "../services/fileProcessor";
 import { Config } from "../shared/config";
-import { UserError } from "../shared/error";
 import { createResultFile } from "../shared/utils";
 
 const GROUP_TIMEOUT = 3000;
@@ -97,7 +96,8 @@ export const handleDocument = async (ctx: Context, bot: Bot) => {
       userProcessingState.delete(userId);
     }
 
-    if (error instanceof UserError) {
+    //Теперь пользователь получает не стандартные ошибки
+    if (error instanceof Error) {
       await ctx.reply(error.message);
     } else {
       await ctx.reply(
