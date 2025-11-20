@@ -89,14 +89,6 @@ export const handleDocument = async (ctx: Context, bot: Bot) => {
   } catch (error) {
     console.error("Processing error:", error);
 
-    const userState = userProcessingState.get(userId);
-
-    if (userState && userState.timer) {
-      clearTimeout(userState.timer);
-      userProcessingState.delete(userId);
-    }
-
-    //Теперь пользователь получает не стандартные ошибки
     if (error instanceof Error) {
       await ctx.reply(error.message);
     } else {
